@@ -24,7 +24,7 @@ def main(args):
     ## 1. First, we load our data and flatten the images into vectors
     xtrain, xtest, ytrain, ytest = load_data(args.data)
     xtrain = xtrain.reshape(xtrain.shape[0], -1)
-    xtest = xtest.reshape(xtest.shape[0], -1)
+    xtest = xtest.reshape(xtest.shape[0], -1)    
 
 
     ## 2. Then we must prepare it. This is were you can create a validation set,
