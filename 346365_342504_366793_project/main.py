@@ -33,6 +33,8 @@ def main(args):
     # Make a validation set (it can overwrite xtest, ytest)
     if not args.test:
         ### WRITE YOUR CODE HERE
+        ### take the some samples from xtest, ytest and put them in xval, yval
+        
         pass
     
     ### WRITE YOUR CODE HERE to do any other data processing
