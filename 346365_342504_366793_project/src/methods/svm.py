@@ -4,13 +4,13 @@ You are allowed to use the `sklearn` package for SVM.
 See the documentation at https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html
 """
 from sklearn.svm import SVC
-
+import numpy as np
 
 class SVM(object):
     """
     SVM method.
     """
-
+    classifier = None
     def __init__(self, C, kernel, gamma=1., degree=1, coef0=0.):
         """
         Initialize the new object (see dummy_methods.py)
@@ -23,11 +23,10 @@ class SVM(object):
             degree (int): degree in polynomial SVM method
             coef0 (float): coef0 in polynomial SVM method
         """
-        ##
-        ###
-        #### WRITE YOUR CODE HERE! 
-        ###
-        ##
+        self.classifier = SVC(C=C, kernel=kernel, gamma=gamma, degree=degree, coef0=coef0, decision_function_shape="ovo")
+        print("[SVM] Initialized with: C={}, kernel={}, gamma={}, degree={}, coef0={}".format(C, kernel, gamma, degree, coef0))
+
+        
         
     def fit(self, training_data, training_labels):
         """
@@ -39,12 +38,8 @@ class SVM(object):
         Returns:
             pred_labels (array): target of shape (N,)
         """
-        ##
-        ###
-        #### WRITE YOUR CODE HERE! 
-        ###
-        ##
-        return self.predict(training_data)
+        self.classifier.fit(training_data, training_labels)
+        return self.classifier.predict(training_data)
     
     def predict(self, test_data):
         """
@@ -55,9 +50,5 @@ class SVM(object):
         Returns:
             pred_labels (array): labels of shape (N,)
         """
-        ##
-        ###
-        #### WRITE YOUR CODE HERE! 
-        ###
-        ##
+        pred_labels = self.classifier.predict(test_data)
         return pred_labels

@@ -1,15 +1,24 @@
 import argparse
 
+from sklearn.decomposition import TruncatedSVD
+from sklearn.manifold import TSNE
+import seaborn as sns
+import matplotlib.pyplot as plt
+import hypertools as hyp
 import numpy as np 
 import torch
 from torch.utils.data import DataLoader
+
+import warnings
+warnings.filterwarnings("ignore")
 
 from src.data import load_data
 from src.methods.dummy_methods import DummyClassifier
 from src.methods.kmeans import KMeans
 from src.methods.logistic_regression import LogisticRegression
 from src.methods.svm import SVM
-from src.utils import normalize_fn, append_bias_term, accuracy_fn, macrof1_fn
+from src.utils import normalize_fn, append_bias_term, accuracy_fn, macrof1_fn, split_train_test
+
 
 
 def main(args):
@@ -24,8 +33,19 @@ def main(args):
     ## 1. First, we load our data and flatten the images into vectors
     xtrain, xtest, ytrain, ytest = load_data(args.data)
     xtrain = xtrain.reshape(xtrain.shape[0], -1)
-    xtest = xtest.reshape(xtest.shape[0], -1)    
+    xtest = xtest.reshape(xtest.shape[0], -1)
+    data_size = len(xtrain) + len(xtest)
 
+    # Plotting the data
+    tsvd = TruncatedSVD(n_components=10)
+    xtrain_tsvd = tsvd.fit_transform(xtrain)
+    tsne = TSNE(n_components=2, init='pca', random_state=0, learning_rate=100)
+    xtrain_tsne = tsne.fit_transform(xtrain_tsvd)
+    sns.scatterplot(xtrain_tsne[:,0], xtrain_tsne[:,1], hue=ytrain)
+    plt.title("TSNE plot of the training data")
+    # plt.show()
+
+    print(f"[INFO] Data loaded: xtrain.shape = {xtrain.shape} - ytrain.shape = {ytrain.shape}")
 
     ## 2. Then we must prepare it. This is were you can create a validation set,
     #  normalize, add bias, etc.
@@ -34,9 +54,17 @@ def main(args):
     if not args.test:
         ### WRITE YOUR CODE HERE
         ### take the some samples from xtest, ytest and put them in xval, yval
-        
-        pass
+        xval, xtest, yval, ytest = split_train_test(xtest, ytest, test_size=0.5)
+        print(f"[INFO] Data loaded: xtest.shape = {xtest.shape} - ytest.shape = {ytest.shape}")
+        print(f"[INFO] Data loaded: xval.shape = {xval.shape} - yval.shape = {yval.shape}")
+        print(f"[INFO] Data composition: train = {len(xtrain)/data_size:.2f} - val = {len(xval)/data_size:.2f} - test = {len(xtest)/data_size:.2f}")
+    else:
+        print(f"[INFO] Data loaded: xtest.shape = {xtest.shape} - ytest.shape = {ytest.shape}")
+        print(f"[INFO] No validation set created.")
+        print(f"[INFO] Data composition: train = {len(xtrain)/data_size:.2f} - test = {len(xtest)/data_size:.2f}")
+
     
+
     ### WRITE YOUR CODE HERE to do any other data processing
 
 
@@ -55,8 +83,8 @@ def main(args):
     if args.method == "dummy_classifier":
         method_obj =  DummyClassifier(arg1=1, arg2=2)
 
-    elif ...:  ### WRITE YOUR CODE HERE
-        pass
+    elif args.method == "svm":
+        method_obj = SVM(C=args.svm_c, kernel=args.svm_kernel, gamma=args.svm_gamma, degree=args.svm_degree, coef0=args.svm_coef0)
     
 
     ## 4. Train and evaluate the method

@@ -1,6 +1,29 @@
 import numpy as np 
 
 
+# Private utils
+def split_train_test(data, labels, test_size=0.5):
+    """
+    Split the data into train and test sets.
+    
+    Arguments:
+        data (array): of shape (N,D)
+        labels (array): of shape (N,)
+        test_size (float): proportion of the data to use as test set
+    Returns:
+        (array): train data of shape (N_train,D)
+        (array): test data of shape (N_test,D)
+        (array): train labels of shape (N_train,)
+        (array): test labels of shape (N_test,)
+    """
+    N = data.shape[0]
+    N_test = int(N * test_size)
+    N_train = N - N_test
+    idx = np.random.permutation(N)
+    idx_train = idx[:N_train]
+    idx_test = idx[N_train:]
+    return data[idx_train], data[idx_test], labels[idx_train], labels[idx_test]
+
 # Generaly utilies
 ##################
 
