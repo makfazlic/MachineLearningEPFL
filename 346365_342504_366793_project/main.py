@@ -6,6 +6,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import hypertools as hyp
 import numpy as np 
+import pandas as pd
+from tqdm import tqdm
 import torch
 from torch.utils.data import DataLoader
 
@@ -32,17 +34,18 @@ def main(args):
     """
     ## 1. First, we load our data and flatten the images into vectors
     xtrain, xtest, ytrain, ytest = load_data(args.data)
+    xval, yval = None, None
     xtrain = xtrain.reshape(xtrain.shape[0], -1)
     xtest = xtest.reshape(xtest.shape[0], -1)
     data_size = len(xtrain) + len(xtest)
 
     # Plotting the data
-    tsvd = TruncatedSVD(n_components=10)
-    xtrain_tsvd = tsvd.fit_transform(xtrain)
-    tsne = TSNE(n_components=2, init='pca', random_state=0, learning_rate=100)
-    xtrain_tsne = tsne.fit_transform(xtrain_tsvd)
-    sns.scatterplot(xtrain_tsne[:,0], xtrain_tsne[:,1], hue=ytrain)
-    plt.title("TSNE plot of the training data")
+    # tsvd = TruncatedSVD(n_components=10)
+    # xtrain_tsvd = tsvd.fit_transform(xtrain)
+    # tsne = TSNE(n_components=2, init='pca', random_state=0, learning_rate=100)
+    # xtrain_tsne = tsne.fit_transform(xtrain_tsvd)
+    # sns.scatterplot(xtrain_tsne[:,0], xtrain_tsne[:,1], hue=ytrain)
+    # plt.title("TSNE plot of the training data")
     # plt.show()
 
     print(f"[INFO] Data loaded: xtrain.shape = {xtrain.shape} - ytrain.shape = {ytrain.shape}")
@@ -84,26 +87,80 @@ def main(args):
         method_obj =  DummyClassifier(arg1=1, arg2=2)
 
     elif args.method == "svm":
-        method_obj = SVM(C=args.svm_c, kernel=args.svm_kernel, gamma=args.svm_gamma, degree=args.svm_degree, coef0=args.svm_coef0)
-    
 
-    ## 4. Train and evaluate the method
+        # Hyperparameter object
+        hp = {}
 
-    # Fit (:=train) the method on the training data
-    preds_train = method_obj.fit(xtrain, ytrain)
+        argC = args.svm_c
+        argGamma = args.svm_gamma
+        argKernel = args.svm_kernel
+        argDegree = args.svm_degree
+        argCoef0 = args.svm_coef0
+
+        # https://medium.com/@myselfaman12345/c-and-gamma-in-svm-e6cee48626be
+        gammas = np.arange(0.0, 1, 0.005)
+        gammas[0] = 0.001
+        Cs = np.arange(0, 110, 10)
+        Cs[0] = 1
+        fig, ax = plt.subplots(11)
+
+        idx = 0
+        for c in tqdm(Cs, desc="C", position=0):
+            scores_accuracy = []
+            scores_macrof1 = []
+            hp[c] = {}
+            for gamma in tqdm(gammas, desc="Gamma", position=1):
+                method_obj = SVM(c, argKernel, gamma, argDegree, argCoef0)
+                preds_train = method_obj.fit(xtrain, ytrain)
+                preds = method_obj.predict(xtest)
+                acc = accuracy_fn(preds_train, ytrain)
+                macrof1 = macrof1_fn(preds_train, ytrain)
+                # print(f"\nTrain set: accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
+
+                acc = accuracy_fn(preds, ytest)
+                macrof1 = macrof1_fn(preds, ytest)
+                # print(f"Test set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
+                scores_accuracy.append(acc)
+                scores_macrof1.append(macrof1)
+                hp[c][gamma] = (acc, macrof1)
+
+            ax[idx].plot(gammas, scores_accuracy, label="Accuracy")
+            ax[idx].set_title(f"C = {c}")
+            ax[idx].set_xlabel("Gamma")
+            ax[idx].set_ylabel("Accuracy")
+            ax[idx].legend()
+            idx += 1
+
         
-    # Predict on unseen data
-    preds = method_obj.predict(xtest)
+        plt.savefig("svm.png")
+        df = pd.DataFrame(hp)
+        df.to_csv("svm.csv")
+        plt.show()
+
+
+
+        method_obj = SVM(argC, argKernel, argGamma, argDegree, argCoef0)
+        preds_train = method_obj.fit(xtrain, ytrain)
+        preds = method_obj.predict(xtest)
+        acc = accuracy_fn(preds_train, ytrain)
+        macrof1 = macrof1_fn(preds_train, ytrain)
+        print(f"\nTrain set: accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
+        
+        acc = accuracy_fn(preds, ytest)
+        macrof1 = macrof1_fn(preds, ytest)
+        print(f"Test set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
+
+                    
 
 
     ## Report results: performance on train and valid/test sets
-    acc = accuracy_fn(preds_train, ytrain)
-    macrof1 = macrof1_fn(preds_train, ytrain)
-    print(f"\nTrain set: accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
+    # acc = accuracy_fn(preds_train, ytrain)
+    # macrof1 = macrof1_fn(preds_train, ytrain)
+    # print(f"\nTrain set: accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
 
-    acc = accuracy_fn(preds, ytest)
-    macrof1 = macrof1_fn(preds, ytest)
-    print(f"Test set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
+    # acc = accuracy_fn(preds, ytest)
+    # macrof1 = macrof1_fn(preds, ytest)
+    # print(f"Test set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
 
     ### WRITE YOUR CODE HERE if you want to add other outputs, visualization, etc.
 
