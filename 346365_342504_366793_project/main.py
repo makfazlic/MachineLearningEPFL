@@ -109,7 +109,7 @@ def main(args):
 
     elif args.method == "kmeans":
        
-       #use the validation to find the best k
+       if not args.test :#use the validation to find the best k
         best_k = 0
         list = []
         for k in range(20):
@@ -122,12 +122,13 @@ def main(args):
         best_k = list.index(max(list))
 
         
-        
+       if args.test: 
         # Train k-means model using best k on 20 iteration to find the best among random start
+        best_k = args.K
+        argmax_iter = args.max_iters
         prev_accuracy = 0
         for i in range(20):
-            kmeans = KMeans()
-            kmeans.__init__(best_k,100)
+            kmeans = KMeans(best_k, argmax_iter)
             kmeans.fit(xval)
     
             # Make predictions on test set
