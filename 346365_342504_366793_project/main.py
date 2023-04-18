@@ -1,16 +1,24 @@
 import argparse
 
+from sklearn.decomposition import TruncatedSVD
+from sklearn.manifold import TSNE
+import seaborn as sns
+import matplotlib.pyplot as plt
 import numpy as np 
+import pandas as pd
+from tqdm import tqdm
 import torch
 from torch.utils.data import DataLoader
+
+import warnings
+warnings.filterwarnings("ignore")
 
 from src.data import load_data
 from src.methods.dummy_methods import DummyClassifier
 from src.methods.kmeans import KMeans
 from src.methods.logistic_regression import LogisticRegression
 from src.methods.svm import SVM
-from src.utils import normalize_fn, append_bias_term, accuracy_fn, macrof1_fn
-
+from src.utils import normalize_fn, append_bias_term, accuracy_fn, macrof1_fn, split_train_test
 
 def main(args):
     """
@@ -23,20 +31,45 @@ def main(args):
     """
     ## 1. First, we load our data and flatten the images into vectors
     xtrain, xtest, ytrain, ytest = load_data(args.data)
+    # 80     20     80       20
+    xval, yval = None, None
     xtrain = xtrain.reshape(xtrain.shape[0], -1)
-    xtest = xtest.reshape(xtest.shape[0], -1)    
+    xtest = xtest.reshape(xtest.shape[0], -1)
+    data_size = len(xtrain) + len(xtest)
 
+    # Plotting the data
+    # tsvd = TruncatedSVD(n_components=10)
+    # xtrain_tsvd = tsvd.fit_transform(xtrain)
+    # tsne = TSNE(n_components=2, init='pca', random_state=0, learning_rate=100)
+    # xtrain_tsne = tsne.fit_transform(xtrain_tsvd)
+    # sns.scatterplot(xtrain_tsne[:,0], xtrain_tsne[:,1], hue=ytrain)
+    # plt.title("TSNE plot of the training data")
+    # plt.show()
 
     ## 2. Then we must prepare it. This is were you can create a validation set,
     #  normalize, add bias, etc.
 
+
+    # Normalize the data
+    xtrain_mean = np.mean(xtrain, axis=0)
+    xtrain_std = np.std(xtrain, axis=0)
+    print(f"[INFO] Data mean: {xtrain_mean.shape}, std: {xtrain_std.shape}, xtrain: {xtrain.shape}")
+    xtrain = normalize_fn(xtrain, xtrain_mean, xtrain_std)
+
+    xtest_mean = np.mean(xtest, axis=0)
+    xtest_std = np.std(xtest, axis=0)
+    print(f"[INFO] Data mean: {xtest_mean.shape}, std: {xtest_std.shape}, xtest: {xtest.shape}")
+    xtest = normalize_fn(xtest, xtest_mean, xtest_std)
+
     # Make a validation set (it can overwrite xtest, ytest)
     if not args.test:
-        ### WRITE YOUR CODE HERE
-        ### take the some samples from xtest, ytest and put them in xval, yval
-        
-        pass
-    
+        xtrain, xtest, ytrain, ytest = split_train_test(xtrain, ytrain, test_size=0.1)
+
+    print(f"[INFO] Data loaded: xtrain.shape = {xtrain.shape} - ytrain.shape = {ytrain.shape}")
+    print(f"[INFO] Data loaded: xtest.shape = {xtest.shape} - ytest.shape = {ytest.shape}")
+    print(f"[INFO] Data composition: train = {len(xtrain)/data_size:.2f} - test = {len(xtest)/data_size:.2f}")
+
+
     ### WRITE YOUR CODE HERE to do any other data processing
 
 
@@ -55,27 +88,36 @@ def main(args):
     if args.method == "dummy_classifier":
         method_obj =  DummyClassifier(arg1=1, arg2=2)
 
-    elif ...:  ### WRITE YOUR CODE HERE
-        pass
-    
+    elif args.method == "svm":
 
-    ## 4. Train and evaluate the method
+        argC = args.svm_c
+        argGamma = args.svm_gamma
+        argKernel = args.svm_kernel
+        argDegree = args.svm_degree
+        argCoef0 = args.svm_coef0
 
-    # Fit (:=train) the method on the training data
-    preds_train = method_obj.fit(xtrain, ytrain)
+        method_obj = SVM(argC, argKernel, argGamma, argDegree, argCoef0)
+        preds_train = method_obj.fit(xtrain, ytrain)
+        preds = method_obj.predict(xtest)
+        acc = accuracy_fn(preds_train, ytrain)
+        macrof1 = macrof1_fn(preds_train, ytrain)
+        print(f"\nTrain set: accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
         
-    # Predict on unseen data
-    preds = method_obj.predict(xtest)
+        acc = accuracy_fn(preds, ytest)
+        macrof1 = macrof1_fn(preds, ytest)
+        print(f"Test set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
+
+                    
 
 
     ## Report results: performance on train and valid/test sets
-    acc = accuracy_fn(preds_train, ytrain)
-    macrof1 = macrof1_fn(preds_train, ytrain)
-    print(f"\nTrain set: accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
+    # acc = accuracy_fn(preds_train, ytrain)
+    # macrof1 = macrof1_fn(preds_train, ytrain)
+    # print(f"\nTrain set: accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
 
-    acc = accuracy_fn(preds, ytest)
-    macrof1 = macrof1_fn(preds, ytest)
-    print(f"Test set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
+    # acc = accuracy_fn(preds, ytest)
+    # macrof1 = macrof1_fn(preds, ytest)
+    # print(f"Test set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
 
     ### WRITE YOUR CODE HERE if you want to add other outputs, visualization, etc.
 
