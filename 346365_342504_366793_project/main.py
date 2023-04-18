@@ -86,6 +86,44 @@ def main(args):
 
         method_obj = SVM(argC, argKernel, argGamma, argDegree, argCoef0)
 
+    elif args.method == "kmeans":
+       
+       if not args.test :#use the validation to find the best k
+        best_k = 0
+        list = []
+        for k in range(20):
+            kmeans = KMeans()
+            kmeans.__init__(k,100)
+            kmeans.fit(xval,ytrain)
+            y_pred = kmeans.predict(xtest)
+            accuracy = accuracy_fn(ytest, y_pred)
+            list.append(accuracy)
+        best_k = list.index(max(list))
+
+        
+       if args.test: 
+        # Train k-means model using best k on 20 iteration to find the best among random start
+        best_k = args.K
+        argmax_iter = args.max_iters
+        prev_accuracy = 0
+        for i in range(20):
+            kmeans = KMeans(best_k, argmax_iter)
+            kmeans.fit(xval, ytrain)
+    
+            # Make predictions on test set
+            y_pred = kmeans.predict(xtest)
+    
+            # Evaluate accuracy of predictions
+            accuracy = accuracy_fn(ytest, y_pred)
+            if (prev_accuracy > accuracy):
+                prev_accuracy = accuracy
+    
+        # Print results
+        print(f"Best k: {best_k}")
+        print(f"Accuracy: {prev_accuracy:.2f}")
+                    
+
+
     ## Report results: performance on train and valid/test sets
     # acc = accuracy_fn(preds_train, ytrain)
     # macrof1 = macrof1_fn(preds_train, ytrain)

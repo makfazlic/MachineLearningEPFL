@@ -19,6 +19,65 @@ class KMeans(object):
         """
         self.K = K
         self.max_iters = max_iters
+        
+        self.centers, self.cluster_assignments = None, None
+        self.cluster_center_label = None
+
+    #Helper function to kmeans
+    def __compute_distance(data, centers):
+        """
+        Compute the euclidean distance between each datapoint and each center.
+    
+        Arguments:    
+            data: array of shape (N, D) where N is the number of data points, D is the number of features (:=pixels).
+            centers: array of shape (K, D), centers of the K clusters.
+        Returns:
+            distances: array of shape (N, K) with the distances between the N points and the K clusters.
+        """
+        N = data.shape[0]
+        K = centers.shape[0]
+
+        ### WRITE YOUR CODE HERE
+        distances = np.zeros((N,K))
+        for k in range(K):
+            center = centers[k]
+            distances[:, k] = np.sqrt(((data - center) ** 2).sum(axis=1))
+        
+        
+        return distances
+    
+    def __find_closest_cluster(distances):
+        """
+        Assign datapoints to the closest clusters.
+    
+        Arguments:
+            distances: array of shape (N, K), the distance of each data point to each cluster center.
+        Returns:
+            cluster_assignments: array of shape (N,), cluster assignment of each datapoint, which are an integer between 0 and K-1.
+        """
+   
+        cluster_assignments = np.argmin(distances, axis=1)
+    
+        return cluster_assignments
+
+    def __compute_centers(data, cluster_assignments, K):
+        """
+        Compute the center of each cluster based on the assigned points.
+
+        Arguments: 
+            data: data array of shape (N,D), where N is the number of samples, D is number of features
+            cluster_assignments: the assigned cluster of each data sample as returned by find_closest_cluster(), shape is (N,)
+            K: the number of clusters
+        Returns:
+            centers: the new centers of each cluster, shape is (K,D) where K is the number of clusters, D the number of features
+        """
+    
+        centers = np.zeros((K,data.shape[1]))
+        for i in range(K):
+            centers[i] = np.mean(data[cluster_assignments == i], axis=0)
+    
+        return centers
+
 
     def k_means(self, data, max_iter=100):
         """
@@ -31,13 +90,33 @@ class KMeans(object):
             centers (array): shape (K,D), the final cluster centers.
             cluster_assignments (array): shape (N,) final cluster assignment for each data point.
         """
-        ##
-        ###
-        #### WRITE YOUR CODE HERE! 
-        ###
-        ##
-        return centers, cluster_assignments
+       # Initialize the centers
+        random = np.random.permutation(data.shape[0])
+        centers = data[random[:self.K]]
+
+        # Loop over the iterations
+        for i in range(max_iter):
+            if ((i+1) % 10 == 0):
+                print(f"Iteration {i+1}/{max_iter}...")
+            old_centers = centers.copy()  # keep in memory the centers of the previous iteration
+
+        
+            distances = self.__compute_distance(data, centers)
+            cluster_assignments = self.__find_closest_cluster(distances)
+            centers = self.__compute_centers(data, cluster_assignments, self.K)
+
+            # End of the algorithm if the centers have not moved (hint: use old_centers and look into np.all)
+            if np.allclose(old_centers, centers):  
+                print(f"K-Means has converged after {i+1} iterations!")
+                break
     
+        # Compute the final cluster assignments
+        cluster_assignments = self.__find_closest_cluster(distances)
+        return centers, cluster_assignments
+
+    
+    
+
     def fit(self, training_data, training_labels):
         """
         Train the model and return predicted labels for training data.
@@ -51,11 +130,11 @@ class KMeans(object):
         Returns:
             pred_labels (array): labels of shape (N,)
         """
-        ##
-        ###
-        #### WRITE YOUR CODE HERE! 
-        ###
-        ##
+        self.centers, self.cluster_assignments = self.k_means(training_data, self.max_iters)
+        self.cluster_center_label = np.zeros((self.centers.shape[0]))
+        for i in range(self.centers.shape[0]):
+            self.cluster_center_label[i] = np.argmax(np.bincount(training_labels[self.cluster_assignments == i]))
+
         return self.predict(training_data)
 
     def predict(self, test_data):
@@ -70,9 +149,9 @@ class KMeans(object):
         Returns:
             pred_labels (np.array): labels of shape (N,)
         """
-        ##
-        ###
-        #### WRITE YOUR CODE HERE! 
-        ###
-        ##
+        distances = self.__compute_distance(test_data, self.centers)
+        cluster_assignments = self.__find_closest_cluster(distances)
+    
+        pred_labels = self.cluster_center_label[cluster_assignments]
+
         return pred_labels
