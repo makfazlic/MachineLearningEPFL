@@ -27,7 +27,15 @@ class LogisticRegression(object):
         self.gamma = gamma
 
     def f_softmax(self, data, W, b):
-        # Softmax function with bias term
+        """
+        Softmax function with bias term.
+        Arguments:
+            data (numpy.ndarray): input data
+            W (numpy.ndarray): weights
+            b (numpy.ndarray): bias term
+        Returns:
+            numpy.ndarray: softmax function output
+        """
 
         scores = np.dot(data, W) + b
         exp_scores = np.exp(scores - np.max(scores, axis=1, keepdims=True))
@@ -37,15 +45,43 @@ class LogisticRegression(object):
         return probs
 
     def loss_logistic_multi(self, data, labels, w, b):
+        """
+        Calculate loss for logistic regression with multiple classes.
+        Arguments:
+            data (numpy.ndarray): input data
+            labels (numpy.ndarray): labels
+            w (numpy.ndarray): weights
+            b (numpy.ndarray): bias term
+        Returns:
+            float: loss
+        """
         y = self.f_softmax(data, w, b)
         loss = -np.sum(labels * np.log(y + self.eps)) / data.shape[0]
-        # reg_loss = 0.5 * self.reg_lambda * np.sum(w**2)
-        return loss  # + reg_loss
+        return loss
 
     def gradient_logistic_multi(self, data, labels, W, b):
+        """
+        Calculate gradient for logistic regression with multiple classes.
+        Arguments:
+            data (numpy.ndarray): input data
+            labels (numpy.ndarray): labels
+            W (numpy.ndarray): weights
+            b (numpy.ndarray): bias term
+        Returns:
+            tuple: gradient of weights and bias
+        """
         return np.dot(np.transpose(data), (self.f_softmax(data, W, b) - labels)), np.sum(self.f_softmax(data, W, b) - labels, axis=0)
 
     def fit(self, training_data, training_labels):
+        """
+        Train the logistic regression model.
+        Arguments:
+            training_data (numpy.ndarray): training data
+            training_labels (numpy.ndarray): training labels
+        Returns:
+            numpy.ndarray: predicted labels for training data
+        """
+
         labels = label_to_onehot(training_labels)
 
         N, D = training_data.shape
@@ -73,6 +109,14 @@ class LogisticRegression(object):
         return self.predict(training_data)
 
     def predict(self, test_data):
+        """
+        Predict labels for test data.
+        Arguments:
+            test_data (numpy.ndarray): test data
+        Returns:
+            numpy.ndarray: predicted labels
+        """
+
         prob = self.f_softmax(test_data, self.weights, self.bias)
         pred_labels = np.zeros(test_data.shape[0])
         for i in range(pred_labels.shape[0]):
