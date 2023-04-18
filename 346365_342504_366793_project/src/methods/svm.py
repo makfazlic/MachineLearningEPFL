@@ -25,7 +25,7 @@ class SVM(object):
         """
         decesion_function_shape = 'ovo'
         self.classifier = SVC(C=C, kernel=kernel, gamma=gamma, degree=degree, coef0=coef0, decision_function_shape=decesion_function_shape)
-        # print("[SVM] Initialized with: C={}, kernel={}, gamma={}, degree={}, coef0={}, decision_function_shape={}".format(C, kernel, gamma, degree, coef0, decesion_function_shape))
+        print("[SVM] Initialized with: C={}, kernel={}, gamma={}, degree={}, coef0={}, decision_function_shape={}".format(C, kernel, gamma, degree, coef0, decesion_function_shape))
 
         
         

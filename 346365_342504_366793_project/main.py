@@ -4,7 +4,6 @@ from sklearn.decomposition import TruncatedSVD
 from sklearn.manifold import TSNE
 import seaborn as sns
 import matplotlib.pyplot as plt
-import hypertools as hyp
 import numpy as np 
 import pandas as pd
 from tqdm import tqdm
@@ -21,8 +20,6 @@ from src.methods.logistic_regression import LogisticRegression
 from src.methods.svm import SVM
 from src.utils import normalize_fn, append_bias_term, accuracy_fn, macrof1_fn, split_train_test
 
-
-
 def main(args):
     """
     The main function of the script. Do not hesitate to play with it
@@ -34,6 +31,7 @@ def main(args):
     """
     ## 1. First, we load our data and flatten the images into vectors
     xtrain, xtest, ytrain, ytest = load_data(args.data)
+    # 80     20     80       20
     xval, yval = None, None
     xtrain = xtrain.reshape(xtrain.shape[0], -1)
     xtest = xtest.reshape(xtest.shape[0], -1)
@@ -48,25 +46,29 @@ def main(args):
     # plt.title("TSNE plot of the training data")
     # plt.show()
 
-    print(f"[INFO] Data loaded: xtrain.shape = {xtrain.shape} - ytrain.shape = {ytrain.shape}")
-
     ## 2. Then we must prepare it. This is were you can create a validation set,
     #  normalize, add bias, etc.
 
+
+    # Normalize the data
+    xtrain_mean = np.mean(xtrain, axis=0)
+    xtrain_std = np.std(xtrain, axis=0)
+    print(f"[INFO] Data mean: {xtrain_mean.shape}, std: {xtrain_std.shape}, xtrain: {xtrain.shape}")
+    xtrain = normalize_fn(xtrain, xtrain_mean, xtrain_std)
+
+    xtest_mean = np.mean(xtest, axis=0)
+    xtest_std = np.std(xtest, axis=0)
+    print(f"[INFO] Data mean: {xtest_mean.shape}, std: {xtest_std.shape}, xtest: {xtest.shape}")
+    xtest = normalize_fn(xtest, xtest_mean, xtest_std)
+
     # Make a validation set (it can overwrite xtest, ytest)
     if not args.test:
-        ### WRITE YOUR CODE HERE
-        ### take the some samples from xtest, ytest and put them in xval, yval
-        xval, xtest, yval, ytest = split_train_test(xtest, ytest, test_size=0.5)
-        print(f"[INFO] Data loaded: xtest.shape = {xtest.shape} - ytest.shape = {ytest.shape}")
-        print(f"[INFO] Data loaded: xval.shape = {xval.shape} - yval.shape = {yval.shape}")
-        print(f"[INFO] Data composition: train = {len(xtrain)/data_size:.2f} - val = {len(xval)/data_size:.2f} - test = {len(xtest)/data_size:.2f}")
-    else:
-        print(f"[INFO] Data loaded: xtest.shape = {xtest.shape} - ytest.shape = {ytest.shape}")
-        print(f"[INFO] No validation set created.")
-        print(f"[INFO] Data composition: train = {len(xtrain)/data_size:.2f} - test = {len(xtest)/data_size:.2f}")
+        xtrain, xtest, ytrain, ytest = split_train_test(xtrain, ytrain, test_size=0.1)
 
-    
+    print(f"[INFO] Data loaded: xtrain.shape = {xtrain.shape} - ytrain.shape = {ytrain.shape}")
+    print(f"[INFO] Data loaded: xtest.shape = {xtest.shape} - ytest.shape = {ytest.shape}")
+    print(f"[INFO] Data composition: train = {len(xtrain)/data_size:.2f} - test = {len(xtest)/data_size:.2f}")
+
 
     ### WRITE YOUR CODE HERE to do any other data processing
 
@@ -88,56 +90,11 @@ def main(args):
 
     elif args.method == "svm":
 
-        # Hyperparameter object
-        hp = {}
-
         argC = args.svm_c
         argGamma = args.svm_gamma
         argKernel = args.svm_kernel
         argDegree = args.svm_degree
         argCoef0 = args.svm_coef0
-
-        # https://medium.com/@myselfaman12345/c-and-gamma-in-svm-e6cee48626be
-        gammas = np.arange(0.0, 1, 0.005)
-        gammas[0] = 0.001
-        Cs = np.arange(0, 110, 10)
-        Cs[0] = 1
-        fig, ax = plt.subplots(11)
-
-        idx = 0
-        for c in tqdm(Cs, desc="C", position=0):
-            scores_accuracy = []
-            scores_macrof1 = []
-            hp[c] = {}
-            for gamma in tqdm(gammas, desc="Gamma", position=1):
-                method_obj = SVM(c, argKernel, gamma, argDegree, argCoef0)
-                preds_train = method_obj.fit(xtrain, ytrain)
-                preds = method_obj.predict(xtest)
-                acc = accuracy_fn(preds_train, ytrain)
-                macrof1 = macrof1_fn(preds_train, ytrain)
-                # print(f"\nTrain set: accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
-
-                acc = accuracy_fn(preds, ytest)
-                macrof1 = macrof1_fn(preds, ytest)
-                # print(f"Test set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
-                scores_accuracy.append(acc)
-                scores_macrof1.append(macrof1)
-                hp[c][gamma] = (acc, macrof1)
-
-            ax[idx].plot(gammas, scores_accuracy, label="Accuracy")
-            ax[idx].set_title(f"C = {c}")
-            ax[idx].set_xlabel("Gamma")
-            ax[idx].set_ylabel("Accuracy")
-            ax[idx].legend()
-            idx += 1
-
-        
-        plt.savefig("svm.png")
-        df = pd.DataFrame(hp)
-        df.to_csv("svm.csv")
-        plt.show()
-
-
 
         method_obj = SVM(argC, argKernel, argGamma, argDegree, argCoef0)
         preds_train = method_obj.fit(xtrain, ytrain)
