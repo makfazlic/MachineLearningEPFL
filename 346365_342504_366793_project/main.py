@@ -115,7 +115,7 @@ def main(args):
         for k in range(20):
             kmeans = KMeans()
             kmeans.__init__(k,100)
-            kmeans.fit(xval)
+            kmeans.fit(xval,ytrain)
             y_pred = kmeans.predict(xtest)
             accuracy = accuracy_fn(ytest, y_pred)
             list.append(accuracy)
@@ -129,7 +129,7 @@ def main(args):
         prev_accuracy = 0
         for i in range(20):
             kmeans = KMeans(best_k, argmax_iter)
-            kmeans.fit(xval)
+            kmeans.fit(xval, ytrain)
     
             # Make predictions on test set
             y_pred = kmeans.predict(xtest)
