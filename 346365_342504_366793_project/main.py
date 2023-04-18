@@ -163,9 +163,6 @@ def main(args):
         macrof1 = macrof1_fn(preds, ytest)
         print(f"[POLY] Train set: accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
 
-        print(l_params)
-        print(r_params)
-        print(p_params)
 
     else:
         preds_train = method_obj.fit(xtrain, ytrain)
