@@ -4,7 +4,6 @@ from sklearn.decomposition import TruncatedSVD
 from sklearn.manifold import TSNE
 import seaborn as sns
 import matplotlib.pyplot as plt
-import hypertools as hyp
 import numpy as np 
 import pandas as pd
 from tqdm import tqdm
@@ -150,6 +149,40 @@ def main(args):
         macrof1 = macrof1_fn(preds, ytest)
         print(f"Test set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
 
+    elif args.method == "kmeans":
+       
+       #use the validation to find the best k
+        best_k = 0
+        list = []
+        for k in range(20):
+            kmeans = KMeans()
+            kmeans.__init__(k,100)
+            kmeans.fit(xval)
+            y_pred = kmeans.predict(xtest)
+            accuracy = accuracy_fn(ytest, y_pred)
+            list.append(accuracy)
+        best_k = list.index(max(list))
+
+        
+        
+        # Train k-means model using best k on 20 iteration to find the best among random start
+        prev_accuracy = 0
+        for i in range(20):
+            kmeans = KMeans()
+            kmeans.__init__(best_k,100)
+            kmeans.fit(xval)
+    
+            # Make predictions on test set
+            y_pred = kmeans.predict(xtest)
+    
+            # Evaluate accuracy of predictions
+            accuracy = accuracy_fn(ytest, y_pred)
+            if (prev_accuracy > accuracy):
+                prev_accuracy = accuracy
+    
+        # Print results
+        print(f"Best k: {best_k}")
+        print(f"Accuracy: {prev_accuracy:.2f}")
                     
 
 
