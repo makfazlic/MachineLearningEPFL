@@ -95,8 +95,6 @@ class KMeans(object):
 
         # Loop over the iterations
         for i in range(max_iter):
-            if ((i+1) % 10 == 0):
-                print(f"Iteration {i+1}/{max_iter}...")
             old_centers = self.centers.copy()  # keep in memory the centers of the previous iteration
 
         

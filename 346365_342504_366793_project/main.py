@@ -99,14 +99,7 @@ def main(args):
         method_obj = SVM(argC, argKernel, argGamma, argDegree, argCoef0)
         preds_train = method_obj.fit(xtrain, ytrain)
         preds = method_obj.predict(xtest)
-        acc = accuracy_fn(preds_train, ytrain)
-        macrof1 = macrof1_fn(preds_train, ytrain)
-        print(f"\nTrain set: accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
         
-        acc = accuracy_fn(preds, ytest)
-        macrof1 = macrof1_fn(preds, ytest)
-        print(f"Test set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
-
     elif args.method == "kmeans":
        
        if not args.test :#use the validation to find the best k
@@ -115,8 +108,8 @@ def main(args):
         list = []
         for k in range(1, 60):
             kmeans = KMeans(k,100) 
-            kmeans.fit(xtrain,ytrain)
-            
+            y_pred = kmeans.fit(xtrain,ytrain)
+
             y_pred = kmeans.predict(xtest)
             accuracy = accuracy_fn(ytest, y_pred)
             list.append(accuracy)
@@ -128,33 +121,37 @@ def main(args):
         # Train k-means model using best k on 20 iteration to find the best among random start
         best_k = args.K
         argmax_iter = args.max_iters
+        preds_train = None
+        preds = None
         prev_accuracy = 0
         for i in range(5):
             kmeans = KMeans(best_k, argmax_iter)
-            kmeans.fit(xtrain, ytrain)
+            preds_train1 = kmeans.fit(xtrain, ytrain)
     
             # Make predictions on test set
-            y_pred = kmeans.predict(xtest)
+            y_pred1 = kmeans.predict(xtest)
     
             # Evaluate accuracy of predictions
-            accuracy = accuracy_fn(ytest, y_pred)
+            accuracy = accuracy_fn(ytest, y_pred1)
             if (prev_accuracy < accuracy):
                 prev_accuracy = accuracy
+                preds_train = preds_train1
+                preds = y_pred1
     
         # Print results
         print(f"Best k: {best_k}")
-        print(f"Accuracy: {prev_accuracy:.2f}")
+    
                     
 
 
-    ## Report results: performance on train and valid/test sets
-    # acc = accuracy_fn(preds_train, ytrain)
-    # macrof1 = macrof1_fn(preds_train, ytrain)
-    # print(f"\nTrain set: accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
+    # Report results: performance on train and valid/test sets
+    acc = accuracy_fn(preds_train, ytrain)
+    macrof1 = macrof1_fn(preds_train, ytrain)
+    print(f"\nTrain set: accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
 
-    # acc = accuracy_fn(preds, ytest)
-    # macrof1 = macrof1_fn(preds, ytest)
-    # print(f"Test set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
+    acc = accuracy_fn(preds, ytest)
+    macrof1 = macrof1_fn(preds, ytest)
+    print(f"Test set:  accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
 
     ### WRITE YOUR CODE HERE if you want to add other outputs, visualization, etc.
 
