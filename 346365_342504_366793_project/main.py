@@ -152,7 +152,17 @@ def main(args):
     # WRITE YOUR CODE HERE if you want to add other outputs, visualization, etc.
     elif args.method == "svm":
 
+        svm_c = args.svm_c
+        svm_kernel = args.svm_kernel
+        svm_gamma = args.svm_gamma
+        svm_degree = args.svm_degree
+        svm_coef0 = args.svm_coef0
+        method_obj = SVM(svm_c,svm_kernel,svm_gamma,svm_degree,svm_coef0)    
         if not args.test:
+            svm_c = args.svm_c
+            svm_kernel = args.svm_kernel
+            svm_gamma = args.svm_gamma
+            
             l_params = method_obj.validate_linear(xtrain, ytrain, xtest, ytest)
             print("[LINEAR] Best hyperparameters found: C = {}, gamma = {}".format(
                 l_params[0], l_params[1]))
@@ -188,6 +198,7 @@ def main(args):
                 f"[POLY] Train set: accuracy = {acc:.3f}% - F1-score = {macrof1:.6f}")
 
         else:
+
             preds_train = method_obj.fit(xtrain, ytrain)
             preds = method_obj.predict(xtest)
             acc = accuracy_fn(preds, ytest)
