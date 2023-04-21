@@ -20,11 +20,11 @@ class KMeans(object):
         self.K = K
         self.max_iters = max_iters
         
-        self.centers, self.cluster_assignments = None, None
+        self.centers = None
         self.cluster_center_label = None
 
     #Helper function to kmeans
-    def __compute_distance(data, centers):
+    def __compute_distance(self, data):
         """
         Compute the euclidean distance between each datapoint and each center.
     
@@ -35,18 +35,16 @@ class KMeans(object):
             distances: array of shape (N, K) with the distances between the N points and the K clusters.
         """
         N = data.shape[0]
-        K = centers.shape[0]
-
-        ### WRITE YOUR CODE HERE
-        distances = np.zeros((N,K))
-        for k in range(K):
-            center = centers[k]
+        distances = np.zeros((N,self.K))
+       
+        for k in range(self.K):
+            center = self.centers[k]
             distances[:, k] = np.sqrt(((data - center) ** 2).sum(axis=1))
         
         
         return distances
     
-    def __find_closest_cluster(distances):
+    def __find_closest_cluster(self, distances):
         """
         Assign datapoints to the closest clusters.
     
@@ -60,7 +58,7 @@ class KMeans(object):
     
         return cluster_assignments
 
-    def __compute_centers(data, cluster_assignments, K):
+    def __compute_centers(self, data, cluster_assignments):
         """
         Compute the center of each cluster based on the assigned points.
 
@@ -72,47 +70,47 @@ class KMeans(object):
             centers: the new centers of each cluster, shape is (K,D) where K is the number of clusters, D the number of features
         """
     
-        centers = np.zeros((K,data.shape[1]))
-        for i in range(K):
+        centers = np.zeros((self.K,data.shape[1]))
+        for i in range(self.K):
             centers[i] = np.mean(data[cluster_assignments == i], axis=0)
     
         return centers
 
 
-    def k_means(self, data, max_iter=100):
+    def k_means(self, data, max_iter):
         """
-        Main K-Means algorithm that performs clustering of the data.
-        
+        Main function that combines all the former functions together to build the K-means algorithm.
+    
         Arguments: 
-            data (array): shape (N,D) where N is the number of data samples, D is number of features.
-            max_iter (int): the maximum number of iterations
+            data: array of shape (N, D) where N is the number of data samples, D is number of features.
+            K: int, the number of clusters.
+            max_iter: int, the maximum number of iterations
         Returns:
-            centers (array): shape (K,D), the final cluster centers.
-            cluster_assignments (array): shape (N,) final cluster assignment for each data point.
+            centers: array of shape (K, D), the final cluster centers.
+            cluster_assignments: array of shape (N,) final cluster assignment for each data point.
         """
-       # Initialize the centers
-        random = np.random.permutation(data.shape[0])
-        centers = data[random[:self.K]]
+        # Initialize the centers
+        random_idx = np.random.permutation(data.shape[0])[:self.K]
+        self.centers = data[random_idx[:self.K]]
 
         # Loop over the iterations
         for i in range(max_iter):
             if ((i+1) % 10 == 0):
                 print(f"Iteration {i+1}/{max_iter}...")
-            old_centers = centers.copy()  # keep in memory the centers of the previous iteration
+            old_centers = self.centers.copy()  # keep in memory the centers of the previous iteration
 
         
-            distances = self.__compute_distance(data, centers)
-            cluster_assignments = self.__find_closest_cluster(distances)
-            centers = self.__compute_centers(data, cluster_assignments, self.K)
+            
+            self.centers = self.__compute_centers(data, self.__find_closest_cluster(self.__compute_distance(data)))
 
             # End of the algorithm if the centers have not moved (hint: use old_centers and look into np.all)
-            if np.allclose(old_centers, centers):  
+            if np.array_equal(old_centers, self.centers):  ### WRITE YOUR CODE HERE
                 print(f"K-Means has converged after {i+1} iterations!")
                 break
-    
+            
+        cluster_assignments = self.__find_closest_cluster(self.__compute_distance(data))
         # Compute the final cluster assignments
-        cluster_assignments = self.__find_closest_cluster(distances)
-        return centers, cluster_assignments
+        return self.centers, cluster_assignments
 
     
     
@@ -130,10 +128,10 @@ class KMeans(object):
         Returns:
             pred_labels (array): labels of shape (N,)
         """
-        self.centers, self.cluster_assignments = self.k_means(training_data, self.max_iters)
+        self.centers, cluster_assignments = self.k_means(training_data, self.max_iters)
         self.cluster_center_label = np.zeros((self.centers.shape[0]))
         for i in range(self.centers.shape[0]):
-            self.cluster_center_label[i] = np.argmax(np.bincount(training_labels[self.cluster_assignments == i]))
+            self.cluster_center_label[i] = np.argmax(np.bincount(training_labels[cluster_assignments == i]))
 
         return self.predict(training_data)
 
@@ -149,7 +147,7 @@ class KMeans(object):
         Returns:
             pred_labels (np.array): labels of shape (N,)
         """
-        distances = self.__compute_distance(test_data, self.centers)
+        distances = self.__compute_distance(test_data)
         cluster_assignments = self.__find_closest_cluster(distances)
     
         pred_labels = self.cluster_center_label[cluster_assignments]

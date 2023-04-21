@@ -110,16 +110,18 @@ def main(args):
     elif args.method == "kmeans":
        
        if not args.test :#use the validation to find the best k
-        best_k = 0
+        k = args.K
+        
         list = []
-        for k in range(20):
-            kmeans = KMeans()
-            kmeans.__init__(k,100)
-            kmeans.fit(xval,ytrain)
+        for k in range(1, 60):
+            kmeans = KMeans(k,100) 
+            kmeans.fit(xtrain,ytrain)
+            
             y_pred = kmeans.predict(xtest)
             accuracy = accuracy_fn(ytest, y_pred)
             list.append(accuracy)
         best_k = list.index(max(list))
+        print(best_k)
 
         
        if args.test: 
@@ -127,16 +129,16 @@ def main(args):
         best_k = args.K
         argmax_iter = args.max_iters
         prev_accuracy = 0
-        for i in range(20):
+        for i in range(5):
             kmeans = KMeans(best_k, argmax_iter)
-            kmeans.fit(xval, ytrain)
+            kmeans.fit(xtrain, ytrain)
     
             # Make predictions on test set
             y_pred = kmeans.predict(xtest)
     
             # Evaluate accuracy of predictions
             accuracy = accuracy_fn(ytest, y_pred)
-            if (prev_accuracy > accuracy):
+            if (prev_accuracy < accuracy):
                 prev_accuracy = accuracy
     
         # Print results
